@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CRUD Películas</title>
+    <style>
+      :root{--bg:#f6f8fb;--card:#ffffff;--accent:#2563eb;--muted:#6b7280;--success:#16a34a;--danger:#dc2626}
+      *{box-sizing:border-box}
+      body{font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;color:#111}
+      .container{max-width:1100px;margin:32px auto;padding:20px}
+      header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+      h1{margin:0;font-size:20px}
+      .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(16,24,40,0.06)}
+      .controls{display:flex;gap:8px;align-items:center}
+      .btn{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+      .btn.secondary{background:#eef2ff;color:var(--accent);border:1px solid rgba(37,99,235,0.12)}
+      .btn.danger{background:var(--danger)}
+      .search{padding:8px 12px;border-radius:8px;border:1px solid #e6e9ef}
+      .table-wrap{margin-top:16px;overflow:auto}
+      table{width:100%;border-collapse:collapse}
+      thead th{background:#f3f4f6;padding:12px;text-align:left;font-size:13px;color:var(--muted);position:sticky;top:0}
+      tbody tr{background:#fff;border-bottom:8px solid #f6f8fb}
+      td{padding:12px;vertical-align:middle}
+      .actions button{margin-right:6px}
+      .small{font-size:13px;color:var(--muted)}
+
+      /* modal */
+      .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.5);display:none;align-items:center;justify-content:center}
+      .modal{background:var(--card);padding:18px;border-radius:10px;width:420px;box-shadow:0 12px 40px rgba(2,6,23,0.2)}
+      .modal h3{margin:0 0 8px 0}
+      .form-row{display:flex;gap:8px;margin-bottom:10px}
+      .form-row input, .form-row select{flex:1;padding:10px;border:1px solid #e6e9ef;border-radius:8px}
+
+      /* toast */
+      .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;display:none}
+
+      @media (max-width:520px){.modal{width:92%}.controls{flex-direction:column;align-items:stretch}}
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div>
+          <h1>Gestión de Películas</h1>
+          <div class="small">CRUD con MySQL — datos persistidos en Docker</div>
+        </div>
+        <div class="controls">
+          <input id="buscar" class="search" placeholder="Buscar por título, director, género..." />
+          <button id="nuevoBtn" class="btn">Nueva película</button>
+        </div>
+      </header>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Título</th><th>Director</th><th>Año</th><th>Género</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="lista"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="backdrop" class="modal-backdrop">
+      <div class="modal">
+        <h3 id="modalTitle">Nueva película</h3>
+        <div class="form-row"><input id="titulo" placeholder="Título" /></div>
+        <div class="form-row"><input id="director" placeholder="Director" /></div>
+        <div class="form-row"><input id="anio" placeholder="Año" type="number" min="1888" max="2099" /></div>
+        <div class="form-row"><input id="genero" placeholder="Género" /></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button id="cancel" class="btn secondary">Cancelar</button>
+          <button id="save" class="btn">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+      const api = '/api/peliculas';
+      const lista = document.getElementById('lista');
+      const backdrop = document.getElementById('backdrop');
+      const modalTitle = document.getElementById('modalTitle');
+      const inputTitulo = document.getElementById('titulo');
+      const inputDirector = document.getElementById('director');
+      const inputAnio = document.getElementById('anio');
+      const inputGenero = document.getElementById('genero');
+      const saveBtn = document.getElementById('save');
+      const cancelBtn = document.getElementById('cancel');
+      const nuevoBtn = document.getElementById('nuevoBtn');
+      const buscar = document.getElementById('buscar');
+      const toast = document.getElementById('toast');
+
+      let editingId = null;
+      let peliculas = [];
+
+      function showToast(msg, timeout=2500){
+        toast.textContent = msg; toast.style.display = 'block';
+        setTimeout(()=> toast.style.display = 'none', timeout);
+      }
+
+      function openModal(edit=false, data=null){
+        backdrop.style.display = 'flex';
+        if(edit && data){
+          modalTitle.textContent = 'Editar película';
+          inputTitulo.value = data.titulo;
+          inputDirector.value = data.director;
+          inputAnio.value = data.anio;
+          inputGenero.value = data.genero;
+          editingId = data.id;
+        } else {
+          modalTitle.textContent = 'Nueva película';
+          editingId = null;
+          inputTitulo.value=''; inputDirector.value=''; inputAnio.value=''; inputGenero.value='';
+        }
+        inputTitulo.focus();
+      }
+
+      function closeModal(){ backdrop.style.display = 'none'; }
+
+      function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+      function renderRow(p){
+        const tr = document.createElement('tr');
+        tr.dataset.id = p.id;
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td>${escapeHtml(p.titulo)}</td>
+          <td>${escapeHtml(p.director)}</td>
+          <td>${p.anio}</td>
+          <td>${escapeHtml(p.genero)}</td>
+          <td class="actions">
+            <button class="btn secondary" data-action="edit">Editar</button>
+            <button class="btn danger" data-action="del">Eliminar</button>
+          </td>
+        `;
+        tr.querySelector('[data-action="edit"]').addEventListener('click', ()=> openModal(true, p));
+        tr.querySelector('[data-action="del"]').addEventListener('click', ()=> eliminar(p.id, tr));
+        return tr;
+      }
+
+      async function fetchAll(){
+        const res = await fetch(api);
+        peliculas = await res.json();
+        applyFilter();
+      }
+
+      function applyFilter(){
+        const q = buscar.value.trim().toLowerCase();
+        lista.innerHTML = '';
+        const filtered = peliculas.filter(p=> !q || (`${p.titulo} ${p.director} ${p.genero}`).toLowerCase().includes(q));
+        const frag = document.createDocumentFragment();
+        filtered.forEach(p=> frag.appendChild(renderRow(p)));
+        lista.appendChild(frag);
+      }
+
+      async function crear(data){
+        const res = await fetch(api, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        if(!res.ok) throw new Error('Error al crear');
+        const nueva = await res.json();
+        peliculas.push(nueva);
+        lista.appendChild(renderRow(nueva));
+        showToast('Película creada');
+      }
+
+      async function actualizar(id, data){
+        const res = await fetch(`${api}/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        if(!res.ok) throw new Error('Error al actualizar');
+        const updated = await res.json();
+        const idx = peliculas.findIndex(x=>x.id==id);
+        if(idx>=0) peliculas[idx]=updated;
+        const tr = lista.querySelector(`tr[data-id="${id}"]`);
+        if(tr){ const newTr = renderRow(updated); lista.replaceChild(newTr,tr); }
+        showToast('Película actualizada');
+      }
+
+      async function eliminar(id, tr){
+        if(!confirm('¿Eliminar esta película?')) return;
+        const res = await fetch(`${api}/${id}`, {method:'DELETE'});
+        if(res.status===204){
+          peliculas = peliculas.filter(p=>p.id!=id);
+          tr.remove();
+          showToast('Película eliminada');
+        } else {
+          showToast('Error al eliminar');
+        }
+      }
+
+      nuevoBtn.addEventListener('click', ()=> openModal(false));
+      cancelBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
+
+      saveBtn.addEventListener('click', async ()=>{
+        const data = {
+          titulo: inputTitulo.value.trim(),
+          director: inputDirector.value.trim(),
+          anio: parseInt(inputAnio.value) || null,
+          genero: inputGenero.value.trim()
+        };
+        try{
+          if(editingId) await actualizar(editingId, data);
+          else await crear(data);
+          closeModal();
+        }catch(err){ showToast(err.message||'Error'); }
+      });
+
+      buscar.addEventListener('input', ()=> applyFilter());
+
+      fetchAll();
+    </script>
+  </body>
+</html>
