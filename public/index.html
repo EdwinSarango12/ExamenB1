@@ -3,77 +3,293 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>CRUD Películas</title>
+    <title>App Cinema ESFOT · Catálogo de Películas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
-      :root{--bg:#f6f8fb;--card:#ffffff;--accent:#2563eb;--muted:#6b7280;--success:#16a34a;--danger:#dc2626}
+      :root{
+        --bg:#0b0b0f;
+        --bg-2:#14141c;
+        --surface:#1b1b26;
+        --surface-2:#23232f;
+        --border:rgba(255,255,255,0.08);
+        --text:#f5f5f7;
+        --muted:#9b9ba7;
+        --red:#e50914;        /* rojo cine clásico */
+        --red-dark:#b00710;
+        --gold:#f5c518;        /* dorado tipo IMDb */
+        --gold-dark:#c9a000;
+        --shadow:0 18px 50px rgba(0,0,0,0.55);
+      }
       *{box-sizing:border-box}
-      body{font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:0;color:#111}
-      .container{max-width:1100px;margin:32px auto;padding:20px}
-      header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-      h1{margin:0;font-size:20px}
-      .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(16,24,40,0.06)}
-      .controls{display:flex;gap:8px;align-items:center}
-      .btn{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-      .btn.secondary{background:#eef2ff;color:var(--accent);border:1px solid rgba(37,99,235,0.12)}
-      .btn.danger{background:var(--danger)}
-      .search{padding:8px 12px;border-radius:8px;border:1px solid #e6e9ef}
-      .table-wrap{margin-top:16px;overflow:auto}
-      table{width:100%;border-collapse:collapse}
-      thead th{background:#f3f4f6;padding:12px;text-align:left;font-size:13px;color:var(--muted);position:sticky;top:0}
-      tbody tr{background:#fff;border-bottom:8px solid #f6f8fb}
-      td{padding:12px;vertical-align:middle}
-      .actions button{margin-right:6px}
-      .small{font-size:13px;color:var(--muted)}
+      html,body{margin:0;padding:0}
+      body{
+        font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+        background:
+          radial-gradient(1200px 600px at 80% -10%, rgba(229,9,20,0.18), transparent 60%),
+          radial-gradient(900px 500px at -10% 0%, rgba(245,197,24,0.08), transparent 55%),
+          var(--bg);
+        color:var(--text);
+        min-height:100vh;
+      }
 
-      /* modal */
-      .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.5);display:none;align-items:center;justify-content:center}
-      .modal{background:var(--card);padding:18px;border-radius:10px;width:420px;box-shadow:0 12px 40px rgba(2,6,23,0.2)}
-      .modal h3{margin:0 0 8px 0}
-      .form-row{display:flex;gap:8px;margin-bottom:10px}
-      .form-row input, .form-row select{flex:1;padding:10px;border:1px solid #e6e9ef;border-radius:8px}
+      /* ===== Header ===== */
+      .topbar{
+        position:sticky;top:0;z-index:40;
+        backdrop-filter:blur(12px);
+        background:linear-gradient(180deg, rgba(11,11,15,0.95), rgba(11,11,15,0.7));
+        border-bottom:1px solid var(--border);
+      }
+      .topbar-inner{
+        max-width:1280px;margin:0 auto;padding:16px 24px;
+        display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+      }
+      .brand{display:flex;align-items:center;gap:12px;cursor:default}
+      .brand .logo{
+        font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;line-height:1;
+        background:linear-gradient(90deg,var(--red),var(--gold));
+        -webkit-background-clip:text;background-clip:text;color:transparent;
+      }
+      .brand .reel{font-size:30px;filter:drop-shadow(0 2px 6px rgba(229,9,20,0.5))}
+      .search-wrap{position:relative;flex:1;min-width:220px;max-width:520px}
+      .search-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}
+      .search{
+        width:100%;padding:12px 14px 12px 42px;border-radius:999px;
+        border:1px solid var(--border);background:var(--surface);color:var(--text);
+        font-size:14px;outline:none;transition:.2s;
+      }
+      .search:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(229,9,20,0.15)}
+      .btn{
+        border:none;cursor:pointer;font-weight:700;font-size:14px;border-radius:999px;
+        padding:12px 20px;display:inline-flex;align-items:center;gap:8px;transition:.18s;white-space:nowrap;
+      }
+      .btn-add{background:linear-gradient(90deg,var(--red),var(--red-dark));color:#fff;box-shadow:0 8px 22px rgba(229,9,20,0.35)}
+      .btn-add:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(229,9,20,0.5)}
+      .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+      .btn-ghost:hover{background:#2c2c3a}
+      .btn-gold{background:linear-gradient(90deg,var(--gold),var(--gold-dark));color:#1a1a1a}
+      .btn-gold:hover{transform:translateY(-2px)}
+      .btn-danger{background:linear-gradient(90deg,var(--red),var(--red-dark));color:#fff}
+      .btn-danger:hover{transform:translateY(-2px)}
+      .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-      /* toast */
-      .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;display:none}
+      /* ===== Hero ===== */
+      .hero{max-width:1280px;margin:0 auto;padding:38px 24px 6px}
+      .hero h1{
+        font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:2px;margin:0 0 6px;line-height:1;
+      }
+      .hero h1 span{color:var(--gold)}
+      .hero p{margin:0;color:var(--muted);font-size:15px}
+      .count-pill{
+        display:inline-block;margin-top:14px;font-size:12px;font-weight:700;letter-spacing:1px;
+        text-transform:uppercase;color:var(--gold);border:1px solid rgba(245,197,24,0.3);
+        padding:6px 12px;border-radius:999px;background:rgba(245,197,24,0.08);
+      }
 
-      @media (max-width:520px){.modal{width:92%}.controls{flex-direction:column;align-items:stretch}}
+      /* ===== Grid ===== */
+      .grid{
+        max-width:1280px;margin:0 auto;padding:24px 24px 64px;
+        display:grid;gap:24px;
+        grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+      }
+      .card{
+        position:relative;border-radius:16px;overflow:hidden;background:var(--surface);
+        border:1px solid var(--border);box-shadow:var(--shadow);
+        transition:transform .22s ease, box-shadow .22s ease;
+      }
+      .card:hover{transform:translateY(-6px);box-shadow:0 26px 60px rgba(0,0,0,0.65)}
+      .poster{position:relative;aspect-ratio:2/3;overflow:hidden;background:var(--surface-2)}
+      .poster img{width:100%;height:100%;object-fit:cover;display:block}
+      .poster .placeholder{
+        width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:8px;text-align:center;padding:18px;
+        background:linear-gradient(160deg,#262633,#15151d);
+      }
+      .poster .placeholder .ph-icon{font-size:40px;opacity:.5}
+      .poster .placeholder .ph-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#cfcfe0}
+      .year-badge{
+        position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);
+        color:var(--gold);font-weight:800;font-size:12px;padding:5px 10px;border-radius:8px;
+        border:1px solid rgba(245,197,24,0.3);
+      }
+      .genre-badge{
+        position:absolute;top:10px;right:10px;background:rgba(229,9,20,0.92);
+        color:#fff;font-weight:700;font-size:11px;padding:5px 9px;border-radius:8px;letter-spacing:.3px;
+      }
+      .overlay{
+        position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;
+        padding:16px;gap:10px;opacity:0;transition:opacity .22s ease;
+        background:linear-gradient(to top, rgba(0,0,0,0.92) 8%, rgba(0,0,0,0.3) 45%, transparent 70%);
+      }
+      .card:hover .overlay{opacity:1}
+      .overlay .btn{padding:10px 14px;font-size:13px;flex:1;justify-content:center}
+      .card-body{padding:14px 14px 16px}
+      .card-title{font-weight:700;font-size:15px;margin:0 0 4px;line-height:1.25}
+      .card-dir{color:var(--muted);font-size:13px;margin:0;display:flex;align-items:center;gap:6px}
+
+      .empty{
+        grid-column:1/-1;text-align:center;color:var(--muted);padding:80px 20px;
+      }
+      .empty .big{font-size:54px;margin-bottom:10px}
+
+      /* ===== Modal ===== */
+      .backdrop{
+        position:fixed;inset:0;z-index:60;background:rgba(3,3,8,0.78);backdrop-filter:blur(6px);
+        display:none;align-items:center;justify-content:center;padding:20px;
+      }
+      .backdrop.open{display:flex;animation:fade .2s ease}
+      @keyframes fade{from{opacity:0}to{opacity:1}}
+      .modal{
+        width:100%;max-width:560px;background:var(--bg-2);border:1px solid var(--border);
+        border-radius:18px;box-shadow:var(--shadow);overflow:hidden;animation:pop .22s ease;
+      }
+      @keyframes pop{from{transform:translateY(14px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+      .modal-head{
+        padding:20px 24px;border-bottom:1px solid var(--border);
+        display:flex;align-items:center;justify-content:space-between;
+        background:linear-gradient(90deg, rgba(229,9,20,0.18), transparent);
+      }
+      .modal-head h3{margin:0;font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1.5px}
+      .modal-head .x{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1}
+      .modal-head .x:hover{color:#fff}
+      .modal-body{padding:24px;max-height:70vh;overflow:auto}
+      .modal-foot{padding:18px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+
+      .form-grid{display:flex;gap:22px;flex-wrap:wrap}
+      .uploader{flex:0 0 170px}
+      .fields{flex:1;min-width:220px;display:flex;flex-direction:column;gap:14px}
+      label{display:block;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+      .inp{
+        width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);
+        background:var(--surface);color:var(--text);font-size:14px;outline:none;transition:.18s;
+      }
+      .inp:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(245,197,24,0.12)}
+
+      .drop{
+        aspect-ratio:2/3;border-radius:12px;border:2px dashed var(--border);
+        background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;
+        gap:8px;cursor:pointer;text-align:center;padding:12px;color:var(--muted);overflow:hidden;position:relative;transition:.18s;
+      }
+      .drop:hover{border-color:var(--gold);color:var(--gold)}
+      .drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+      .drop .cam{font-size:34px}
+      .drop .hint{font-size:12px;line-height:1.3}
+      .drop-actions{display:flex;gap:8px;margin-top:10px}
+      .link-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline}
+      .link-btn:hover{color:var(--red)}
+
+      .confirm-icon{font-size:46px;text-align:center;margin-bottom:10px}
+      .confirm-text{text-align:center;color:var(--muted);font-size:15px;line-height:1.5}
+      .confirm-text b{color:var(--text)}
+
+      /* ===== Toast ===== */
+      .toast{
+        position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+        background:var(--surface-2);color:#fff;padding:14px 22px;border-radius:12px;z-index:80;
+        border:1px solid var(--border);box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;
+        display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;
+      }
+      .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+      .toast.ok{border-left:4px solid var(--gold)}
+      .toast.err{border-left:4px solid var(--red)}
+
+      @media (max-width:560px){
+        .hero h1{font-size:40px}
+        .form-grid{flex-direction:column}
+        .uploader{flex:0 0 auto;max-width:170px;margin:0 auto}
+      }
     </style>
   </head>
   <body>
-    <div class="container">
-      <header>
-        <div>
-          <h1>Gestión de Películas</h1>
-          <div class="small">CRUD con MySQL — datos persistidos en Docker</div>
+    <!-- ===== Barra superior ===== -->
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="reel">🎬</span>
+          <span class="logo">APP CINEMA ESFOT</span>
         </div>
-        <div class="controls">
-          <input id="buscar" class="search" placeholder="Buscar por título, director, género..." />
-          <button id="nuevoBtn" class="btn">Nueva película</button>
+        <div class="search-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="buscar" class="search" placeholder="Buscar por título, director o género..." />
         </div>
-      </header>
+        <button id="nuevoBtn" class="btn btn-add">＋ Agregar película</button>
+      </div>
+    </div>
 
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Título</th><th>Director</th><th>Año</th><th>Género</th><th>Acciones</th></tr>
-            </thead>
-            <tbody id="lista"></tbody>
-          </table>
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+      <h1>Tu <span>cartelera</span> de cine</h1>
+      <p>Explora, agrega y administra tu catálogo de películas favoritas.</p>
+      <div class="count-pill" id="contador">Cargando catálogo…</div>
+    </section>
+
+    <!-- ===== Grid de tarjetas ===== -->
+    <main id="grid" class="grid"></main>
+
+    <!-- ===== Modal Agregar / Editar ===== -->
+    <div id="formBackdrop" class="backdrop">
+      <div class="modal">
+        <div class="modal-head">
+          <h3 id="formTitle">Agregar película</h3>
+          <button class="x" data-close="form">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="uploader">
+              <label>Cartel / Foto</label>
+              <div id="drop" class="drop">
+                <img id="preview" alt="" style="display:none" />
+                <span id="dropPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:8px">
+                  <span class="cam">🖼️</span>
+                  <span class="hint">Haz clic para subir una foto</span>
+                </span>
+              </div>
+              <input id="fileInput" type="file" accept="image/*" style="display:none" />
+              <div class="drop-actions">
+                <button type="button" id="quitarFoto" class="link-btn" style="display:none">Quitar foto</button>
+              </div>
+            </div>
+            <div class="fields">
+              <div>
+                <label for="titulo">Título</label>
+                <input id="titulo" class="inp" placeholder="Ej. Interstellar" />
+              </div>
+              <div>
+                <label for="director">Director</label>
+                <input id="director" class="inp" placeholder="Ej. Christopher Nolan" />
+              </div>
+              <div>
+                <label for="anio">Año</label>
+                <input id="anio" class="inp" type="number" min="1888" max="2099" placeholder="Ej. 2014" />
+              </div>
+              <div>
+                <label for="genero">Género</label>
+                <input id="genero" class="inp" placeholder="Ej. Ciencia ficción" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-close="form">Cancelar</button>
+          <button id="guardar" class="btn btn-gold">Guardar película</button>
         </div>
       </div>
     </div>
 
-    <!-- Modal -->
-    <div id="backdrop" class="modal-backdrop">
-      <div class="modal">
-        <h3 id="modalTitle">Nueva película</h3>
-        <div class="form-row"><input id="titulo" placeholder="Título" /></div>
-        <div class="form-row"><input id="director" placeholder="Director" /></div>
-        <div class="form-row"><input id="anio" placeholder="Año" type="number" min="1888" max="2099" /></div>
-        <div class="form-row"><input id="genero" placeholder="Género" /></div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-          <button id="cancel" class="btn secondary">Cancelar</button>
-          <button id="save" class="btn">Guardar</button>
+    <!-- ===== Modal Confirmar eliminación ===== -->
+    <div id="delBackdrop" class="backdrop">
+      <div class="modal" style="max-width:420px">
+        <div class="modal-head">
+          <h3>Eliminar película</h3>
+          <button class="x" data-close="del">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="confirm-icon">🗑️</div>
+          <p class="confirm-text">¿Seguro que deseas eliminar <b id="delTitulo">esta película</b>? Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-close="del">Cancelar</button>
+          <button id="confirmarDel" class="btn btn-danger">Sí, eliminar</button>
         </div>
       </div>
     </div>
@@ -82,133 +298,222 @@
 
     <script>
       const api = '/api/peliculas';
-      const lista = document.getElementById('lista');
-      const backdrop = document.getElementById('backdrop');
-      const modalTitle = document.getElementById('modalTitle');
-      const inputTitulo = document.getElementById('titulo');
-      const inputDirector = document.getElementById('director');
-      const inputAnio = document.getElementById('anio');
-      const inputGenero = document.getElementById('genero');
-      const saveBtn = document.getElementById('save');
-      const cancelBtn = document.getElementById('cancel');
-      const nuevoBtn = document.getElementById('nuevoBtn');
-      const buscar = document.getElementById('buscar');
-      const toast = document.getElementById('toast');
+      const $ = (id) => document.getElementById(id);
 
-      let editingId = null;
+      const grid = $('grid');
+      const contador = $('contador');
+      const buscar = $('buscar');
+      const toast = $('toast');
+
+      // Form modal
+      const formBackdrop = $('formBackdrop');
+      const formTitle = $('formTitle');
+      const inputTitulo = $('titulo');
+      const inputDirector = $('director');
+      const inputAnio = $('anio');
+      const inputGenero = $('genero');
+      const drop = $('drop');
+      const fileInput = $('fileInput');
+      const preview = $('preview');
+      const dropPlaceholder = $('dropPlaceholder');
+      const quitarFoto = $('quitarFoto');
+      const guardarBtn = $('guardar');
+
+      // Delete modal
+      const delBackdrop = $('delBackdrop');
+      const delTitulo = $('delTitulo');
+      const confirmarDel = $('confirmarDel');
+
       let peliculas = [];
+      let editingId = null;
+      let imagenData = null;     // base64 actual del formulario
+      let deletingId = null;
 
-      function showToast(msg, timeout=2500){
-        toast.textContent = msg; toast.style.display = 'block';
-        setTimeout(()=> toast.style.display = 'none', timeout);
+      /* ---------- utilidades ---------- */
+      function showToast(msg, ok = true) {
+        toast.textContent = (ok ? '✅ ' : '⚠️ ') + msg;
+        toast.className = 'toast show ' + (ok ? 'ok' : 'err');
+        setTimeout(() => (toast.className = 'toast'), 2800);
+      }
+      function escapeHtml(s) {
+        return String(s ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
       }
 
-      function openModal(edit=false, data=null){
-        backdrop.style.display = 'flex';
-        if(edit && data){
-          modalTitle.textContent = 'Editar película';
-          inputTitulo.value = data.titulo;
-          inputDirector.value = data.director;
-          inputAnio.value = data.anio;
-          inputGenero.value = data.genero;
-          editingId = data.id;
-        } else {
-          modalTitle.textContent = 'Nueva película';
-          editingId = null;
-          inputTitulo.value=''; inputDirector.value=''; inputAnio.value=''; inputGenero.value='';
-        }
-        inputTitulo.focus();
-      }
-
-      function closeModal(){ backdrop.style.display = 'none'; }
-
-      function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-      function renderRow(p){
-        const tr = document.createElement('tr');
-        tr.dataset.id = p.id;
-        tr.innerHTML = `
-          <td>${p.id}</td>
-          <td>${escapeHtml(p.titulo)}</td>
-          <td>${escapeHtml(p.director)}</td>
-          <td>${p.anio}</td>
-          <td>${escapeHtml(p.genero)}</td>
-          <td class="actions">
-            <button class="btn secondary" data-action="edit">Editar</button>
-            <button class="btn danger" data-action="del">Eliminar</button>
-          </td>
-        `;
-        tr.querySelector('[data-action="edit"]').addEventListener('click', ()=> openModal(true, p));
-        tr.querySelector('[data-action="del"]').addEventListener('click', ()=> eliminar(p.id, tr));
-        return tr;
-      }
-
-      async function fetchAll(){
-        const res = await fetch(api);
-        peliculas = await res.json();
-        applyFilter();
-      }
-
-      function applyFilter(){
+      /* ---------- render del grid ---------- */
+      function applyFilter() {
         const q = buscar.value.trim().toLowerCase();
-        lista.innerHTML = '';
-        const filtered = peliculas.filter(p=> !q || (`${p.titulo} ${p.director} ${p.genero}`).toLowerCase().includes(q));
+        const filtered = peliculas.filter(
+          (p) => !q || `${p.titulo} ${p.director} ${p.genero}`.toLowerCase().includes(q)
+        );
+        contador.textContent = `${filtered.length} ${filtered.length === 1 ? 'película' : 'películas'} en cartelera`;
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `<div class="empty"><div class="big">🍿</div><div>No se encontraron películas.</div></div>`;
+          return;
+        }
+        grid.innerHTML = '';
         const frag = document.createDocumentFragment();
-        filtered.forEach(p=> frag.appendChild(renderRow(p)));
-        lista.appendChild(frag);
+        filtered.forEach((p) => frag.appendChild(renderCard(p)));
+        grid.appendChild(frag);
       }
 
-      async function crear(data){
-        const res = await fetch(api, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-        if(!res.ok) throw new Error('Error al crear');
-        const nueva = await res.json();
-        peliculas.push(nueva);
-        lista.appendChild(renderRow(nueva));
-        showToast('Película creada');
+      function renderCard(p) {
+        const card = document.createElement('article');
+        card.className = 'card';
+        const posterInner = p.imagen
+          ? `<img src="${p.imagen}" alt="${escapeHtml(p.titulo)}" loading="lazy" />`
+          : `<div class="placeholder"><div class="ph-icon">🎞️</div><div class="ph-title">${escapeHtml(p.titulo)}</div></div>`;
+
+        card.innerHTML = `
+          <div class="poster">
+            ${posterInner}
+            ${p.anio ? `<span class="year-badge">${escapeHtml(p.anio)}</span>` : ''}
+            ${p.genero ? `<span class="genre-badge">${escapeHtml(p.genero)}</span>` : ''}
+            <div class="overlay">
+              <button class="btn btn-gold" data-act="edit">✎ Actualizar</button>
+              <button class="btn btn-danger" data-act="del">🗑 Eliminar</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">${escapeHtml(p.titulo)}</h3>
+            <p class="card-dir">🎬 ${escapeHtml(p.director || 'Director desconocido')}</p>
+          </div>`;
+        card.querySelector('[data-act="edit"]').addEventListener('click', () => abrirForm(p));
+        card.querySelector('[data-act="del"]').addEventListener('click', () => abrirEliminar(p));
+        return card;
       }
 
-      async function actualizar(id, data){
-        const res = await fetch(`${api}/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-        if(!res.ok) throw new Error('Error al actualizar');
-        const updated = await res.json();
-        const idx = peliculas.findIndex(x=>x.id==id);
-        if(idx>=0) peliculas[idx]=updated;
-        const tr = lista.querySelector(`tr[data-id="${id}"]`);
-        if(tr){ const newTr = renderRow(updated); lista.replaceChild(newTr,tr); }
-        showToast('Película actualizada');
-      }
-
-      async function eliminar(id, tr){
-        if(!confirm('¿Eliminar esta película?')) return;
-        const res = await fetch(`${api}/${id}`, {method:'DELETE'});
-        if(res.status===204){
-          peliculas = peliculas.filter(p=>p.id!=id);
-          tr.remove();
-          showToast('Película eliminada');
+      /* ---------- modal de formulario (agregar / actualizar) ---------- */
+      function setPreview(data) {
+        imagenData = data;
+        if (data) {
+          preview.src = data;
+          preview.style.display = 'block';
+          dropPlaceholder.style.display = 'none';
+          quitarFoto.style.display = 'inline';
         } else {
-          showToast('Error al eliminar');
+          preview.src = '';
+          preview.style.display = 'none';
+          dropPlaceholder.style.display = 'flex';
+          quitarFoto.style.display = 'none';
         }
       }
 
-      nuevoBtn.addEventListener('click', ()=> openModal(false));
-      cancelBtn.addEventListener('click', closeModal);
-      backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
+      function abrirForm(data = null) {
+        editingId = data ? data.id : null;
+        formTitle.textContent = data ? 'Actualizar película' : 'Agregar película';
+        guardarBtn.textContent = data ? 'Guardar cambios' : 'Guardar película';
+        inputTitulo.value = data ? data.titulo : '';
+        inputDirector.value = data ? data.director : '';
+        inputAnio.value = data ? data.anio : '';
+        inputGenero.value = data ? data.genero : '';
+        setPreview(data ? data.imagen || null : null);
+        formBackdrop.classList.add('open');
+        setTimeout(() => inputTitulo.focus(), 50);
+      }
+      function cerrarForm() { formBackdrop.classList.remove('open'); }
 
-      saveBtn.addEventListener('click', async ()=>{
+      // Subir foto -> base64
+      drop.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) return showToast('El archivo debe ser una imagen', false);
+        if (file.size > 4 * 1024 * 1024) return showToast('La imagen supera 4 MB', false);
+        const reader = new FileReader();
+        reader.onload = () => setPreview(reader.result);
+        reader.readAsDataURL(file);
+      });
+      quitarFoto.addEventListener('click', (e) => { e.stopPropagation(); setPreview(null); fileInput.value = ''; });
+
+      guardarBtn.addEventListener('click', async () => {
         const data = {
           titulo: inputTitulo.value.trim(),
           director: inputDirector.value.trim(),
           anio: parseInt(inputAnio.value) || null,
-          genero: inputGenero.value.trim()
+          genero: inputGenero.value.trim(),
+          imagen: imagenData,
         };
-        try{
-          if(editingId) await actualizar(editingId, data);
+        if (!data.titulo) return showToast('El título es obligatorio', false);
+        guardarBtn.disabled = true;
+        try {
+          if (editingId) await actualizar(editingId, data);
           else await crear(data);
-          closeModal();
-        }catch(err){ showToast(err.message||'Error'); }
+          cerrarForm();
+        } catch (err) {
+          showToast(err.message || 'Error', false);
+        } finally {
+          guardarBtn.disabled = false;
+        }
       });
 
-      buscar.addEventListener('input', ()=> applyFilter());
+      /* ---------- modal de eliminación ---------- */
+      function abrirEliminar(p) {
+        deletingId = p.id;
+        delTitulo.textContent = `"${p.titulo}"`;
+        delBackdrop.classList.add('open');
+      }
+      function cerrarEliminar() { delBackdrop.classList.remove('open'); deletingId = null; }
+      confirmarDel.addEventListener('click', async () => {
+        if (!deletingId) return;
+        confirmarDel.disabled = true;
+        try {
+          await eliminar(deletingId);
+          cerrarEliminar();
+        } catch (err) {
+          showToast(err.message || 'Error al eliminar', false);
+        } finally {
+          confirmarDel.disabled = false;
+        }
+      });
+
+      /* ---------- API ---------- */
+      async function fetchAll() {
+        try {
+          const res = await fetch(api);
+          peliculas = await res.json();
+          applyFilter();
+        } catch {
+          contador.textContent = 'No se pudo conectar con la base de datos';
+        }
+      }
+      async function crear(data) {
+        const res = await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (!res.ok) throw new Error('Error al crear la película');
+        const nueva = await res.json();
+        peliculas.push(nueva);
+        applyFilter();
+        showToast('Película agregada al catálogo');
+      }
+      async function actualizar(id, data) {
+        const res = await fetch(`${api}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (!res.ok) throw new Error('Error al actualizar');
+        const updated = await res.json();
+        const idx = peliculas.findIndex((x) => x.id == id);
+        if (idx >= 0) peliculas[idx] = updated;
+        applyFilter();
+        showToast('Película actualizada');
+      }
+      async function eliminar(id) {
+        const res = await fetch(`${api}/${id}`, { method: 'DELETE' });
+        if (res.status !== 204) throw new Error('Error al eliminar');
+        peliculas = peliculas.filter((p) => p.id != id);
+        applyFilter();
+        showToast('Película eliminada');
+      }
+
+      /* ---------- eventos globales ---------- */
+      $('nuevoBtn').addEventListener('click', () => abrirForm(null));
+      buscar.addEventListener('input', applyFilter);
+      document.querySelectorAll('[data-close]').forEach((el) =>
+        el.addEventListener('click', () => (el.dataset.close === 'form' ? cerrarForm() : cerrarEliminar()))
+      );
+      [formBackdrop, delBackdrop].forEach((bd) =>
+        bd.addEventListener('click', (e) => { if (e.target === bd) bd.classList.remove('open'); })
+      );
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { cerrarForm(); cerrarEliminar(); }
+      });
 
       fetchAll();
     </script>

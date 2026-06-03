@@ -1,15 +1,19 @@
--- Crear base de datos
-CREATE DATABASE IF NOT EXISTS cine;
+SET NAMES utf8mb4;
+
+CREATE DATABASE IF NOT EXISTS cine
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 USE cine;
 
--- Crear tabla de películas
+-- Crear tabla de películas (charset utf8mb4 para tildes, ñ, etc.)
 CREATE TABLE peliculas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(100) NOT NULL,
     director VARCHAR(100),
     anio INT,
-    genero VARCHAR(50)
-);
+    genero VARCHAR(50),
+    imagen LONGTEXT NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Insertar registros de ejemplo
 INSERT INTO peliculas (titulo, director, anio, genero) VALUES
